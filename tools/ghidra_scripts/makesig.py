@@ -32,11 +32,11 @@ BytePattern.sig_str = __bytepattern_sig_str
 
 def dumpOperandInfo(ins, op):
 	t = hex(ins.getOperandType(op))
-	print('  ' + str(ins.getPrototype().getOperandValueMask(op)) + ' ' + str(t))
-	
+	print(f'  {str(ins.getPrototype().getOperandValueMask(op))} {t}')
+
 	# TODO if register
 	for opobj in ins.getOpObjects(op):
-		print('  - ' + str(opobj))
+		print(f'  - {str(opobj)}')
 
 def shouldMaskOperand(ins, opIndex):
 	"""
@@ -82,34 +82,31 @@ def process(start_at = MAKE_SIG_AT['fn']):
 		ins = cm.getInstructionAt(fn.getEntryPoint())
 	elif start_at == MAKE_SIG_AT['cursor']:
 		ins = cm.getInstructionContaining(currentAddress)
-	
+
 	if not ins:
 		raise Exception("Could not find entry point to function")
 
-	pattern = "" # contains pattern string (supports regular expressions)
 	byte_pattern = [] # contains BytePattern instances
-	
+
 	# keep track of our matches
 	matches = []
 	match_limit = 128
-	
+
+	pattern = ""
 	while fm.getFunctionContaining(ins.getAddress()) == fn:
 		for entry in getMaskedInstruction(ins):
 			byte_pattern.append(entry)
-			if entry.is_wildcard:
-				pattern += '.'
-			else:
-				pattern += r'\x{:02x}'.format(entry.byte)
-		
+			pattern += '.' if entry.is_wildcard else r'\x{:02x}'.format(entry.byte)
 		expected_next = ins.getAddress().add(ins.length)
 		ins = ins.getNext()
-		
+
 		if ins.getAddress() != expected_next:
 			# we don't have a good way to deal with alignment bytes
 			# raise an exception for now
-			raise Exception("Instruction at %s is not adjacent"
-					" to previous (expected %s)" % (expected_next, ins.getAddress()))
-		
+			raise Exception(
+				f"Instruction at {expected_next} is not adjacent to previous (expected {ins.getAddress()})"
+			)
+
 		if 0 < len(matches) < match_limit:
 			# we have all the remaining matches, start only searching those addresses
 			match_set = AddressSet()
@@ -119,11 +116,11 @@ def process(start_at = MAKE_SIG_AT['fn']):
 		else:
 			# the matches are sorted in ascending order, so the first match will be the start
 			matches = findBytes(matches[0] if len(matches) else None, pattern, match_limit)
-		
+
 		if len(matches) < 2:
 			break
-	
-	if not len(matches) == 1:
+
+	if len(matches) != 1:
 		print(*(b.ida_str() for b in byte_pattern))
 		print('Signature matched', len(matches), 'locations:', *(matches))
 		raise Exception("Could not find unique signature")

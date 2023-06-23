@@ -32,8 +32,7 @@ def run_and_return(argv):
   else:
     p = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, ignored = p.communicate()
-    rval = p.poll()
-    if rval:
+    if rval := p.poll():
       raise subprocess.CalledProcessError(rval, argv)
     text = output.decode('utf8')
   return text.strip()
@@ -52,7 +51,7 @@ def output_version_headers():
   with open(os.path.join(SourceFolder, 'product.version')) as fp:
     contents = fp.read().strip()
   m = re.match('(\d+)\.(\d+)\.(\d+)-?(.*)', contents)
-  if m == None:
+  if m is None:
     raise Exception('Could not detremine product version')
   major, minor, release, tag = m.groups()
   product = "{0}.{1}.{2}.{3}".format(major, minor, release, count)
