@@ -48,9 +48,7 @@ def fixWindowsPath(path):
   GetLongPathName = ctypes.windll.kernel32.GetLongPathNameW
   longp = ctypes.create_unicode_buffer(260)
   rv = GetLongPathName(shortp, longp, 260)
-  if rv == 0 or rv > 260:
-    return path
-  return longp.value
+  return path if rv == 0 or rv > 260 else longp.value
 
 for i, line in enumerate(lines):
   line = line.strip().split(None, 2)
